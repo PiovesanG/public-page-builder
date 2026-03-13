@@ -19,6 +19,7 @@ const emptyForm = {
   vigencia: "",
   valorInicial: "",
   processo: "",
+  linkPdf: "",
 };
 
 export function ContractForm({ onAdd }: ContractFormProps) {
@@ -26,10 +27,7 @@ export function ContractForm({ onAdd }: ContractFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAdd({
-      id: crypto.randomUUID(),
-      ...form,
-    });
+    onAdd({ id: crypto.randomUUID(), ...form });
     setForm(emptyForm);
   };
 
@@ -77,6 +75,10 @@ export function ContractForm({ onAdd }: ContractFormProps) {
           <div className="space-y-1.5">
             <Label htmlFor="processo">Processo</Label>
             <Input id="processo" value={form.processo} onChange={(e) => update("processo", e.target.value)} placeholder="Ex: 2025/001234" />
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="linkPdf">Link do Contrato (PDF)</Label>
+            <Input id="linkPdf" value={form.linkPdf} onChange={(e) => update("linkPdf", e.target.value)} placeholder="https://exemplo.com/contrato.pdf" />
           </div>
           <div className="lg:col-span-4 flex justify-end pt-2">
             <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground px-8">

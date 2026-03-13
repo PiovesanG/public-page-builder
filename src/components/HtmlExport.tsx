@@ -29,6 +29,7 @@ function generateHtml(contracts: Contract[], exercicio: string): string {
         <td>${c.vigencia || "—"}</td>
         <td>${c.valorInicial || "—"}</td>
         <td>${c.processo || "—"}</td>
+        <td>${c.linkPdf ? `<a href="${c.linkPdf}" target="_blank" class="btn-pdf">📄 PDF</a>` : "—"}</td>
       </tr>`
     )
     .join("\n");
@@ -49,8 +50,17 @@ function generateHtml(contracts: Contract[], exercicio: string): string {
     th { background-color: #1e3a5f; color: #fff; padding: 12px 10px; text-align: left; font-size: 14px; }
     td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
     tr:hover { background-color: #f0fdf4; }
-    a { color: #2d8659; text-decoration: none; font-weight: 600; }
-    a:hover { text-decoration: underline; }
+    .btn-pdf {
+      display: inline-block;
+      background-color: #dc2626;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .btn-pdf:hover { background-color: #b91c1c; }
     .footer { margin-top: 30px; font-size: 12px; color: #64748b; }
   </style>
 </head>
@@ -68,6 +78,7 @@ function generateHtml(contracts: Contract[], exercicio: string): string {
         <th>Vigência</th>
         <th>Valor Inicial (R$)</th>
         <th>Processo</th>
+        <th>Download</th>
       </tr>
     </thead>
     <tbody>

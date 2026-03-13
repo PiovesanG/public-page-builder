@@ -8,4 +8,5 @@ export interface Contract {
   vigencia: string;
   valorInicial: string;
   processo: string;
+  linkPdf: string;
 }

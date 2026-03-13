@@ -2,7 +2,7 @@ import { Contract } from "@/types/contract";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, FileText } from "lucide-react";
+import { Trash2, FileText, ExternalLink } from "lucide-react";
 
 interface ContractTableProps {
   contracts: Contract[];
@@ -49,6 +49,7 @@ export function ContractTable({ contracts, onDelete }: ContractTableProps) {
                 <TableHead className="font-semibold">Vigência</TableHead>
                 <TableHead className="font-semibold">Valor Inicial (R$)</TableHead>
                 <TableHead className="font-semibold">Processo</TableHead>
+                <TableHead className="font-semibold">PDF</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -63,6 +64,13 @@ export function ContractTable({ contracts, onDelete }: ContractTableProps) {
                   <TableCell>{c.vigencia || "—"}</TableCell>
                   <TableCell>{c.valorInicial || "—"}</TableCell>
                   <TableCell>{c.processo || "—"}</TableCell>
+                  <TableCell>
+                    {c.linkPdf ? (
+                      <a href={c.linkPdf} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-xs font-medium">
+                        <ExternalLink className="h-3.5 w-3.5" /> PDF
+                      </a>
+                    ) : "—"}
+                  </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => onDelete(c.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8">
                       <Trash2 className="h-4 w-4" />
