@@ -11,13 +11,14 @@ interface ContractFormProps {
 }
 
 const emptyForm = {
-  numero: "",
-  fornecedor: "",
+  contrato: "",
+  dataAssinatura: "",
+  empresa: "",
   objeto: "",
-  valor: "",
-  dataInicio: "",
-  dataFim: "",
-  linkPDF: "",
+  fundamento: "",
+  vigencia: "",
+  valorInicial: "",
+  processo: "",
 };
 
 export function ContractForm({ onAdd }: ContractFormProps) {
@@ -46,32 +47,36 @@ export function ContractForm({ onAdd }: ContractFormProps) {
       <CardContent>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="numero">Nº do Contrato *</Label>
-            <Input id="numero" value={form.numero} onChange={(e) => update("numero", e.target.value)} required placeholder="Ex: 001/2025" />
+            <Label htmlFor="contrato">Contrato *</Label>
+            <Input id="contrato" value={form.contrato} onChange={(e) => update("contrato", e.target.value)} required placeholder="Ex: 001/2025" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="fornecedor">Fornecedor *</Label>
-            <Input id="fornecedor" value={form.fornecedor} onChange={(e) => update("fornecedor", e.target.value)} required placeholder="Nome do fornecedor" />
+            <Label htmlFor="dataAssinatura">Data de Assinatura</Label>
+            <Input id="dataAssinatura" type="date" value={form.dataAssinatura} onChange={(e) => update("dataAssinatura", e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="empresa">Empresa *</Label>
+            <Input id="empresa" value={form.empresa} onChange={(e) => update("empresa", e.target.value)} required placeholder="Nome da empresa" />
           </div>
           <div className="space-y-1.5 md:col-span-2">
             <Label htmlFor="objeto">Objeto *</Label>
             <Input id="objeto" value={form.objeto} onChange={(e) => update("objeto", e.target.value)} required placeholder="Descrição do objeto" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="valor">Valor (R$)</Label>
-            <Input id="valor" value={form.valor} onChange={(e) => update("valor", e.target.value)} placeholder="Ex: 150.000,00" />
+            <Label htmlFor="fundamento">Fundamento (Licitação)</Label>
+            <Input id="fundamento" value={form.fundamento} onChange={(e) => update("fundamento", e.target.value)} placeholder="Ex: Pregão 010/2025" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="dataInicio">Data Início</Label>
-            <Input id="dataInicio" type="date" value={form.dataInicio} onChange={(e) => update("dataInicio", e.target.value)} />
+            <Label htmlFor="vigencia">Vigência</Label>
+            <Input id="vigencia" value={form.vigencia} onChange={(e) => update("vigencia", e.target.value)} placeholder="Ex: 12 meses" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="dataFim">Data Fim</Label>
-            <Input id="dataFim" type="date" value={form.dataFim} onChange={(e) => update("dataFim", e.target.value)} />
+            <Label htmlFor="valorInicial">Valor Inicial (R$)</Label>
+            <Input id="valorInicial" value={form.valorInicial} onChange={(e) => update("valorInicial", e.target.value)} placeholder="Ex: 150.000,00" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="linkPDF">Link do PDF</Label>
-            <Input id="linkPDF" type="url" value={form.linkPDF} onChange={(e) => update("linkPDF", e.target.value)} placeholder="https://..." />
+            <Label htmlFor="processo">Processo</Label>
+            <Input id="processo" value={form.processo} onChange={(e) => update("processo", e.target.value)} placeholder="Ex: 2025/001234" />
           </div>
           <div className="lg:col-span-4 flex justify-end pt-2">
             <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground px-8">

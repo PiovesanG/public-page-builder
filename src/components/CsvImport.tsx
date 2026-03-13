@@ -10,29 +10,31 @@ interface CsvImportProps {
 }
 
 const FIELD_MAP: Record<string, keyof Omit<Contract, "id">> = {
-  numero: "numero",
-  "nº contrato": "numero",
-  "nº do contrato": "numero",
-  contrato: "numero",
-  fornecedor: "fornecedor",
-  empresa: "fornecedor",
+  contrato: "contrato",
+  "nº contrato": "contrato",
+  "nº do contrato": "contrato",
+  numero: "contrato",
+  "data de assinatura": "dataAssinatura",
+  "data assinatura": "dataAssinatura",
+  dataassinatura: "dataAssinatura",
+  assinatura: "dataAssinatura",
+  empresa: "empresa",
+  fornecedor: "empresa",
   objeto: "objeto",
   descricao: "objeto",
   "descrição": "objeto",
-  valor: "valor",
-  "valor (r$)": "valor",
-  "data inicio": "dataInicio",
-  "data início": "dataInicio",
-  datainicio: "dataInicio",
-  inicio: "dataInicio",
-  "data fim": "dataFim",
-  datafim: "dataFim",
-  fim: "dataFim",
-  link: "linkPDF",
-  "link pdf": "linkPDF",
-  linkpdf: "linkPDF",
-  pdf: "linkPDF",
-  url: "linkPDF",
+  "fundamento (licitação)": "fundamento",
+  "fundamento (licitacao)": "fundamento",
+  fundamento: "fundamento",
+  "licitação": "fundamento",
+  licitacao: "fundamento",
+  vigencia: "vigencia",
+  "vigência": "vigencia",
+  "valor inicial": "valorInicial",
+  valorinicial: "valorInicial",
+  valor: "valorInicial",
+  "valor (r$)": "valorInicial",
+  processo: "processo",
 };
 
 function normalize(str: string) {
@@ -46,43 +48,55 @@ export function CsvImport({ onImport }: CsvImportProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const headers = results.meta.fields || [];
-        const mapping: Record<string, keyof Omit<Contract, "id">> = {};
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
 
-        headers.forEach((h) => {
-          const key = normalize(h);
-          if (FIELD_MAP[key]) mapping[h] = FIELD_MAP[key];
-        });
+      Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const headers = results.meta.fields || [];
+          const mapping: Record<string, keyof Omit<Contract, "id">> = {};
 
-        const contracts: Contract[] = (results.data as Record<string, string>[])
-          .filter((row) => {
-            const num = Object.entries(mapping).find(([, v]) => v === "numero");
-            return num && row[num[0]]?.trim();
-          })
-          .map((row) => {
-            const c: any = { id: crypto.randomUUID() };
-            Object.entries(mapping).forEach(([csvCol, field]) => {
-              c[field] = row[csvCol]?.trim() || "";
-            });
-            return c as Contract;
+          headers.forEach((h) => {
+            const key = normalize(h);
+            if (FIELD_MAP[key]) mapping[h] = FIELD_MAP[key];
           });
 
-        if (contracts.length === 0) {
-          toast.error("Nenhum contrato encontrado no CSV. Verifique as colunas.");
-        } else {
-          onImport(contracts);
-          toast.success(`${contracts.length} contrato(s) importado(s) com sucesso!`);
-        }
-      },
-      error: () => {
-        toast.error("Erro ao ler o arquivo CSV.");
-      },
-    });
+          const contracts: Contract[] = (results.data as Record<string, string>[])
+            .filter((row) => {
+              const num = Object.entries(mapping).find(([, v]) => v === "contrato");
+              return num && row[num[0]]?.trim();
+            })
+            .map((row) => {
+              const c: any = { id: crypto.randomUUID() };
+              Object.entries(mapping).forEach(([csvCol, field]) => {
+                c[field] = row[csvCol]?.trim() || "";
+              });
+              // Ensure all fields exist
+              const fields: (keyof Omit<Contract, "id">)[] = [
+                "contrato", "dataAssinatura", "empresa", "objeto",
+                "fundamento", "vigencia", "valorInicial", "processo"
+              ];
+              fields.forEach(f => { if (!c[f]) c[f] = ""; });
+              return c as Contract;
+            });
 
+          if (contracts.length === 0) {
+            toast.error("Nenhum contrato encontrado no CSV. Verifique as colunas.");
+          } else {
+            onImport(contracts);
+            toast.success(`${contracts.length} contrato(s) importado(s) com sucesso!`);
+          }
+        },
+        error: () => {
+          toast.error("Erro ao ler o arquivo CSV.");
+        },
+      });
+    };
+
+    reader.readAsText(file, "UTF-8");
     if (inputRef.current) inputRef.current.value = "";
   };
 

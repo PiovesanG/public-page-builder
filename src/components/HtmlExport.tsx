@@ -7,38 +7,44 @@ import { useState } from "react";
 
 interface HtmlExportProps {
   contracts: Contract[];
+  exercicio: string;
 }
 
 function formatDate(dateStr: string) {
   if (!dateStr) return "—";
+  if (dateStr.includes("/")) return dateStr;
   const [y, m, d] = dateStr.split("-");
   return `${d}/${m}/${y}`;
 }
 
-function generateHtml(contracts: Contract[]): string {
+function generateHtml(contracts: Contract[], exercicio: string): string {
   const rows = contracts
     .map(
       (c) => `      <tr>
-        <td>${c.numero}</td>
-        <td>${c.fornecedor}</td>
+        <td>${c.contrato}</td>
+        <td>${formatDate(c.dataAssinatura)}</td>
+        <td>${c.empresa}</td>
         <td>${c.objeto}</td>
-        <td>${c.valor || "—"}</td>
-        <td>${formatDate(c.dataInicio)}</td>
-        <td>${formatDate(c.dataFim)}</td>
-        <td>${c.linkPDF ? `<a href="${c.linkPDF}" target="_blank" rel="noopener noreferrer">📄 Ver Contrato</a>` : "—"}</td>
+        <td>${c.fundamento || "—"}</td>
+        <td>${c.vigencia || "—"}</td>
+        <td>${c.valorInicial || "—"}</td>
+        <td>${c.processo || "—"}</td>
       </tr>`
     )
     .join("\n");
+
+  const titulo = `CONTRATOS DA PREFEITURA MUNICIPAL EXERCÍCIO ${exercicio || "____"}`;
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contratos - Prefeitura Municipal</title>
+  <title>${titulo}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; color: #1e293b; }
-    h1 { color: #1e3a5f; border-bottom: 3px solid #2d8659; padding-bottom: 10px; }
+    h1 { color: #1e3a5f; border-bottom: 3px solid #2d8659; padding-bottom: 10px; text-transform: uppercase; }
+    .subtitle { font-size: 12px; color: #64748b; font-style: italic; margin-top: -5px; margin-bottom: 20px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th { background-color: #1e3a5f; color: #fff; padding: 12px 10px; text-align: left; font-size: 14px; }
     td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
@@ -49,17 +55,19 @@ function generateHtml(contracts: Contract[]): string {
   </style>
 </head>
 <body>
-  <h1>Contratos Administrativos</h1>
+  <h1>${titulo}</h1>
+  <p class="subtitle">* Excluídos contratos celebrados pela Administração Indireta</p>
   <table>
     <thead>
       <tr>
-        <th>Nº Contrato</th>
-        <th>Fornecedor</th>
+        <th>Contrato</th>
+        <th>Data de Assinatura</th>
+        <th>Empresa</th>
         <th>Objeto</th>
-        <th>Valor (R$)</th>
-        <th>Início</th>
-        <th>Fim</th>
-        <th>Documento</th>
+        <th>Fundamento (Licitação)</th>
+        <th>Vigência</th>
+        <th>Valor Inicial (R$)</th>
+        <th>Processo</th>
       </tr>
     </thead>
     <tbody>
@@ -71,9 +79,9 @@ ${rows}
 </html>`;
 }
 
-export function HtmlExport({ contracts }: HtmlExportProps) {
+export function HtmlExport({ contracts, exercicio }: HtmlExportProps) {
   const [open, setOpen] = useState(false);
-  const html = generateHtml(contracts);
+  const html = generateHtml(contracts, exercicio);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(html);
@@ -81,11 +89,11 @@ export function HtmlExport({ contracts }: HtmlExportProps) {
   };
 
   const handleDownload = () => {
-    const blob = new Blob([html], { type: "text/html" });
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "contratos.html";
+    a.download = `contratos-exercicio-${exercicio || "geral"}.html`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Arquivo HTML baixado!");

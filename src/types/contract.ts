@@ -1,10 +1,11 @@
 export interface Contract {
   id: string;
-  numero: string;
-  fornecedor: string;
+  contrato: string;
+  dataAssinatura: string;
+  empresa: string;
   objeto: string;
-  valor: string;
-  dataInicio: string;
-  dataFim: string;
-  linkPDF: string;
+  fundamento: string;
+  vigencia: string;
+  valorInicial: string;
+  processo: string;
 }
