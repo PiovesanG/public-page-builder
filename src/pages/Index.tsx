@@ -4,10 +4,13 @@ import { ContractForm } from "@/components/ContractForm";
 import { ContractTable } from "@/components/ContractTable";
 import { CsvImport } from "@/components/CsvImport";
 import { HtmlExport } from "@/components/HtmlExport";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { FileText } from "lucide-react";
 
 const Index = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [exercicio, setExercicio] = useState(new Date().getFullYear().toString());
 
   const addContract = (contract: Contract) => {
     setContracts((prev) => [...prev, contract]);
@@ -23,7 +26,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 py-5 flex items-center gap-3">
           <FileText className="h-7 w-7" />
@@ -35,14 +37,25 @@ const Index = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6 max-w-7xl">
-        {/* Actions bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-muted-foreground text-sm">
-            Cadastre os contratos e gere o HTML pronto para publicação no portal.
-          </p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="flex items-end gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="exercicio" className="text-sm font-medium">Exercício</Label>
+              <Input
+                id="exercicio"
+                value={exercicio}
+                onChange={(e) => setExercicio(e.target.value)}
+                placeholder="Ex: 2025"
+                className="w-28"
+              />
+            </div>
+            <p className="text-muted-foreground text-sm pb-2">
+              Cadastre os contratos e gere o HTML pronto para publicação no portal.
+            </p>
+          </div>
           <div className="flex gap-2">
             <CsvImport onImport={importContracts} />
-            <HtmlExport contracts={contracts} />
+            <HtmlExport contracts={contracts} exercicio={exercicio} />
           </div>
         </div>
 
