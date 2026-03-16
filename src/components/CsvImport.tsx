@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { type ChangeEvent, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Contract } from "@/types/contract";
 import { Upload } from "lucide-react";
@@ -11,33 +11,33 @@ interface CsvImportProps {
 
 const FIELD_MAP: Record<string, keyof Omit<Contract, "id">> = {
   contrato: "contrato",
-  "nº contrato": "contrato",
-  "nº do contrato": "contrato",
-  "n contrato": "contrato",
-  "n do contrato": "contrato",
   numero: "contrato",
+  "numero contrato": "contrato",
+  "numero do contrato": "contrato",
+  "no contrato": "contrato",
+  "no do contrato": "contrato",
   "data de assinatura": "dataAssinatura",
   "data assinatura": "dataAssinatura",
-  dataassinatura: "dataAssinatura",
   assinatura: "dataAssinatura",
   empresa: "empresa",
   fornecedor: "empresa",
+  "razao social": "empresa",
   objeto: "objeto",
   descricao: "objeto",
-  "fundamento (licitacao)": "fundamento",
-  "fundamento(licitacao)": "fundamento",
+  "fundamento licitacao": "fundamento",
+  "fundamento da licitacao": "fundamento",
   fundamento: "fundamento",
   licitacao: "fundamento",
   vigencia: "vigencia",
+  "vigencia contratual": "vigencia",
+  "periodo de vigencia": "vigencia",
+  "prazo de vigencia": "vigencia",
   "valor inicial": "valorInicial",
-  valorinicial: "valorInicial",
   valor: "valorInicial",
-  "valor (r$)": "valorInicial",
-  "valor inicial (r$)": "valorInicial",
+  "valor r": "valorInicial",
   processo: "processo",
   link: "linkPdf",
   "link pdf": "linkPdf",
-  linkpdf: "linkPdf",
   "link do contrato": "linkPdf",
   "link contrato": "linkPdf",
   url: "linkPdf",
@@ -45,67 +45,108 @@ const FIELD_MAP: Record<string, keyof Omit<Contract, "id">> = {
   arquivo: "linkPdf",
 };
 
-function normalize(str: string) {
-  return str
+const CONTRACT_FIELDS: (keyof Omit<Contract, "id">)[] = [
+  "contrato",
+  "dataAssinatura",
+  "empresa",
+  "objeto",
+  "fundamento",
+  "vigencia",
+  "valorInicial",
+  "processo",
+  "linkPdf",
+];
+
+function normalizeHeader(value: string) {
+  return value
+    .replace(/^\uFEFF/, "")
     .toLowerCase()
     .trim()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[º°]/g, "o")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function hasGarbledChars(text: string): boolean {
-  // Common garbled patterns from reading Windows-1252 as UTF-8
-  return /ï¿½|Ã§|Ã£|Ã©|Ã¡|Ã³|Ãº|Ã­|Ã¢|Ãª|Ã´|Ã|â€/.test(text);
+  return /�|ï¿½|Ã.|â.|\u0000/.test(text);
+}
+
+function decodeCsvContent(buffer: ArrayBuffer): string {
+  const utf8Text = new TextDecoder("utf-8").decode(buffer);
+  if (!hasGarbledChars(utf8Text)) {
+    return utf8Text;
+  }
+
+  return new TextDecoder("windows-1252").decode(buffer);
+}
+
+function findFieldForHeader(header: string): keyof Omit<Contract, "id"> | undefined {
+  const normalized = normalizeHeader(header);
+
+  if (FIELD_MAP[normalized]) {
+    return FIELD_MAP[normalized];
+  }
+
+  const containsAll = (...terms: string[]) => terms.every((term) => normalized.includes(term));
+
+  if (containsAll("data", "assinatura")) return "dataAssinatura";
+  if (containsAll("fundamento", "licitacao") || normalized === "fundamento" || normalized === "licitacao") return "fundamento";
+  if (normalized.includes("vigencia")) return "vigencia";
+  if (containsAll("valor", "inicial") || normalized === "valor") return "valorInicial";
+  if (normalized.includes("processo")) return "processo";
+  if (normalized.includes("empresa") || normalized.includes("fornecedor")) return "empresa";
+  if (normalized.includes("objeto") || normalized.includes("descricao")) return "objeto";
+  if (normalized.includes("link") || normalized.includes("url") || normalized.includes("arquivo")) return "linkPdf";
+  if (normalized.includes("contrato") || normalized === "numero") return "contrato";
+
+  return undefined;
 }
 
 function parseContracts(text: string, onImport: (contracts: Contract[]) => void) {
-  Papa.parse(text, {
+  Papa.parse<Record<string, string>>(text, {
     header: true,
-    skipEmptyLines: true,
+    skipEmptyLines: "greedy",
+    delimitersToGuess: [",", ";", "\t", "|"],
+    transformHeader: (header) => header.replace(/^\uFEFF/, "").trim(),
     complete: (results) => {
       const headers = results.meta.fields || [];
       const mapping: Record<string, keyof Omit<Contract, "id">> = {};
 
-      headers.forEach((h) => {
-        const key = normalize(h);
-        // Try exact match first, then partial
-        if (FIELD_MAP[key]) {
-          mapping[h] = FIELD_MAP[key];
-        } else {
-          // Try matching against all keys
-          for (const [mapKey, mapVal] of Object.entries(FIELD_MAP)) {
-            if (key.includes(mapKey) || mapKey.includes(key)) {
-              mapping[h] = mapVal;
-              break;
-            }
-          }
+      headers.forEach((header) => {
+        const field = findFieldForHeader(header);
+        if (field) {
+          mapping[header] = field;
         }
       });
 
-      const contracts: Contract[] = (results.data as Record<string, string>[])
-        .filter((row) => {
-          const num = Object.entries(mapping).find(([, v]) => v === "contrato");
-          return num && row[num[0]]?.trim();
-        })
+      const contractColumn = Object.entries(mapping).find(([, field]) => field === "contrato")?.[0];
+
+      const contracts: Contract[] = (results.data || [])
+        .filter((row) => contractColumn && String(row[contractColumn] ?? "").trim())
         .map((row) => {
-          const c: any = { id: crypto.randomUUID() };
-          Object.entries(mapping).forEach(([csvCol, field]) => {
-            c[field] = row[csvCol]?.trim() || "";
+          const contract = { id: crypto.randomUUID() } as Contract;
+
+          CONTRACT_FIELDS.forEach((field) => {
+            contract[field] = "";
           });
-          const fields: (keyof Omit<Contract, "id">)[] = [
-            "contrato", "dataAssinatura", "empresa", "objeto",
-            "fundamento", "vigencia", "valorInicial", "processo", "linkPdf"
-          ];
-          fields.forEach(f => { if (!c[f]) c[f] = ""; });
-          return c as Contract;
+
+          Object.entries(mapping).forEach(([csvColumn, field]) => {
+            contract[field] = String(row[csvColumn] ?? "").trim();
+          });
+
+          return contract;
         });
 
       if (contracts.length === 0) {
         toast.error("Nenhum contrato encontrado no CSV. Verifique as colunas.");
-      } else {
-        onImport(contracts);
-        toast.success(`${contracts.length} contrato(s) importado(s) com sucesso!`);
+        return;
       }
+
+      onImport(contracts);
+      toast.success(`${contracts.length} contrato(s) importado(s) com sucesso!`);
     },
     error: () => {
       toast.error("Erro ao ler o arquivo CSV.");
@@ -116,30 +157,21 @@ function parseContracts(text: string, onImport: (contracts: Contract[]) => void)
 export function CsvImport({ onImport }: CsvImportProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Try UTF-8 first, if garbled try Windows-1252
-    const readerUtf8 = new FileReader();
-    readerUtf8.onload = (event) => {
-      const text = event.target?.result as string;
-
-      if (hasGarbledChars(text)) {
-        // Re-read with Windows-1252 (ISO-8859-1)
-        const readerLatin = new FileReader();
-        readerLatin.onload = (ev) => {
-          const textLatin = ev.target?.result as string;
-          parseContracts(textLatin, onImport);
-        };
-        readerLatin.readAsText(file, "windows-1252");
-      } else {
-        parseContracts(text, onImport);
+    try {
+      const buffer = await file.arrayBuffer();
+      const text = decodeCsvContent(buffer);
+      parseContracts(text, onImport);
+    } catch {
+      toast.error("Erro ao ler o arquivo CSV.");
+    } finally {
+      if (inputRef.current) {
+        inputRef.current.value = "";
       }
-    };
-
-    readerUtf8.readAsText(file, "UTF-8");
-    if (inputRef.current) inputRef.current.value = "";
+    }
   };
 
   return (

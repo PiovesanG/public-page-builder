@@ -17,21 +17,42 @@ function formatDate(dateStr: string) {
   return `${d}/${m}/${y}`;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function getExerciseSuffix(exercicio: string) {
+  const digits = exercicio.replace(/\D/g, "");
+  if (!digits) return "00";
+  return digits.slice(-2).padStart(2, "0");
+}
+
+function getPdfFileName(contractNumber: string, exercicio: string) {
+  return `Contrato ${contractNumber.trim()}.${getExerciseSuffix(exercicio)}.pdf`;
+}
+
 function generateHtml(contracts: Contract[], exercicio: string): string {
   const rows = contracts
-    .map(
-      (c) => `      <tr>
-        <td>${c.contrato}</td>
-        <td>${formatDate(c.dataAssinatura)}</td>
-        <td>${c.empresa}</td>
-        <td>${c.objeto}</td>
-        <td>${c.fundamento || "—"}</td>
-        <td>${c.vigencia || "—"}</td>
-        <td>${c.valorInicial || "—"}</td>
-        <td>${c.processo || "—"}</td>
-        <td>${c.linkPdf ? `<a href="${c.linkPdf}" target="_blank" class="btn-pdf">📄 PDF</a>` : "—"}</td>
-      </tr>`
-    )
+    .map((contract) => {
+      const pdfFileName = getPdfFileName(contract.contrato, exercicio);
+
+      return `      <tr>
+        <td>${escapeHtml(contract.contrato || "—")}</td>
+        <td>${escapeHtml(formatDate(contract.dataAssinatura))}</td>
+        <td>${escapeHtml(contract.empresa || "—")}</td>
+        <td>${escapeHtml(contract.objeto || "—")}</td>
+        <td>${escapeHtml(contract.fundamento || "—")}</td>
+        <td>${escapeHtml(contract.vigencia || "—")}</td>
+        <td>${escapeHtml(contract.valorInicial || "—")}</td>
+        <td>${escapeHtml(contract.processo || "—")}</td>
+        <td><a href="${escapeHtml(pdfFileName)}" download="${escapeHtml(pdfFileName)}" class="btn-pdf">📄 PDF</a></td>
+      </tr>`;
+    })
     .join("\n");
 
   const titulo = `CONTRATOS DA PREFEITURA MUNICIPAL EXERCÍCIO ${exercicio || "____"}`;
@@ -41,7 +62,7 @@ function generateHtml(contracts: Contract[], exercicio: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${titulo}</title>
+  <title>${escapeHtml(titulo)}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; color: #1e293b; }
     h1 { color: #1e3a5f; border-bottom: 3px solid #2d8659; padding-bottom: 10px; text-transform: uppercase; }
@@ -65,7 +86,7 @@ function generateHtml(contracts: Contract[], exercicio: string): string {
   </style>
 </head>
 <body>
-  <h1>${titulo}</h1>
+  <h1>${escapeHtml(titulo)}</h1>
   <p class="subtitle">* Excluídos contratos celebrados pela Administração Indireta</p>
   <table>
     <thead>
@@ -100,7 +121,7 @@ export function HtmlExport({ contracts, exercicio }: HtmlExportProps) {
   };
 
   const handleDownload = () => {
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const blob = new Blob(["\uFEFF", html], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
