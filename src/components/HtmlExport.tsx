@@ -33,7 +33,9 @@ function getExerciseSuffix(exercicio: string) {
 }
 
 function getPdfFileName(contractNumber: string, exercicio: string) {
-  return `Contrato ${contractNumber.trim()}.${getExerciseSuffix(exercicio)}.pdf`;
+  const raw = contractNumber.trim().replace(/\D/g, "");
+  const padded = raw.padStart(3, "0");
+  return `Contrato ${padded}.${getExerciseSuffix(exercicio)}.pdf`;
 }
 
 function generateHtml(contracts: Contract[], exercicio: string): string {
